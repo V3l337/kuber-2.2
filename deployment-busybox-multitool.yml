@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-busybox-multitool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: busy-multi
+  template:
+    metadata:
+      labels:
+        app: busy-multi
+    spec: 
+      containers:
+      - name: busybox
+        image: busybox
+        command: ["/bin/sh", "-c", "while true; do echo \"$(date) - Log entry\" >> /mnt/data/log.txt; sleep 5; done"]
+        volumeMounts:
+        - name: shared-storage
+          mountPath: /mnt/data
+      - name: multitool
+        image: wbitt/network-multitool
+        command: ["/bin/sh", "-c", "sleep infinity"]
+        volumeMounts:
+        - name: shared-storage
+          mountPath: /mnt/data
+      volumes:
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: example-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: example-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath: 
+    path: /mnt/data
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: example-pvc
+spec:
+  resources:
+    requests:
+      storage: 500Mi
+  accessModes:
+    - ReadWriteOnce
+ 
+
+
+
